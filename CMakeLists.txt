@@ -1,74 +1,80 @@
-cmake_minimum_required(VERSION 3.10)
-project(nrlmsise-00 VERSION 2.0)
-set(nrlmsise_00_version 2.0)
+cmake_minimum_required(VERSION 3.21)
+project(nrlmsise_00 VERSION 2.0 LANGUAGES C)
 
 set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD_REQUIRED ON)
 
-add_compile_options(
-    -O2
-    -fPIC
-)
+include(GNUInstallDirs)
 
-#=== Shared Library ==================================================
+#=== Library =========================================================
 
-add_library(nrlmsise-00 SHARED
+add_library(nrlmsise_00 SHARED
     src/nrlmsise-00.c
     src/nrlmsise-00_data.c
 )
 
-target_include_directories(nrlmsise-00 PUBLIC
+add_library(nrlmsise_00::nrlmsise_00 ALIAS nrlmsise_00)
+
+set_target_properties(nrlmsise_00 PROPERTIES
+    C_STANDARD 99
+    C_STANDARD_REQUIRED ON
+)
+
+target_compile_options(nrlmsise_00 PRIVATE -O2)
+
+target_include_directories(nrlmsise_00 PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:include> 
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
-target_link_libraries(nrlmsise-00 m)
+target_link_libraries(nrlmsise_00 PRIVATE m)
 
-#=== Test ============================================================
+#=== Tests ===========================================================
 
-add_executable(nrlmsise-00-test test/nrlmsise-00_test.c)
+if(PROJECT_IS_TOP_LEVEL)
+    add_executable(nrlmsise_00_test test/nrlmsise-00_test.c)
+    target_link_libraries(nrlmsise_00_test PRIVATE nrlmsise_00)
 
-target_link_libraries(nrlmsise-00-test nrlmsise-00)
+    include(CTest)
+    add_test(NAME nrlmsise_00_test COMMAND nrlmsise_00_test)
+endif()
 
-enable_testing()
+#=== Install & Packaging =============================================
 
-add_test(NAME nrlmsise-00-test COMMAND nrlmsise-00-test)
+if(PROJECT_IS_TOP_LEVEL)
+    install(TARGETS nrlmsise_00 EXPORT nrlmsise_00-targets
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT Runtime
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT Development
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT Runtime
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    )
 
-#=== Package =========================================================
+    install(FILES include/nrlmsise-00.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
-install(TARGETS nrlmsise-00 EXPORT nrlmsise-00-targets
-    LIBRARY DESTINATION lib COMPONENT Runtime
-    INCLUDES DESTINATION include
-)
+    install(EXPORT nrlmsise_00-targets
+        FILE nrlmsise_00-targets.cmake
+        NAMESPACE nrlmsise_00::
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/nrlmsise_00
+    )
 
-install(FILES include/nrlmsise-00.h DESTINATION include)
+    include(CMakePackageConfigHelpers)
 
-install(EXPORT nrlmsise-00-targets
-    FILE nrlmsise-00-targets.cmake
-    DESTINATION lib/cmake/nrlmsise-00
-)
+    configure_package_config_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/nrlmsise_00-config.cmake.in
+        "${CMAKE_CURRENT_BINARY_DIR}/nrlmsise_00-config.cmake"
+        INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/nrlmsise_00"
+        NO_SET_AND_CHECK_MACRO
+    )
 
-include(CMakePackageConfigHelpers)
+    write_basic_package_version_file(
+        "${CMAKE_CURRENT_BINARY_DIR}/nrlmsise_00-config-version.cmake"
+        VERSION "${PROJECT_VERSION}"
+        COMPATIBILITY AnyNewerVersion
+    )
 
-configure_package_config_file(${CMAKE_CURRENT_SOURCE_DIR}/nrlmsise-00-config.cmake.in
-    "${CMAKE_CURRENT_BINARY_DIR}/nrlmsise-00-config.cmake"
-    INSTALL_DESTINATION "lib/cmake/nrlmsise-00"
-    NO_SET_AND_CHECK_MACRO
-    NO_CHECK_REQUIRED_COMPONENTS_MACRO
-)
-
-write_basic_package_version_file(
-    "${CMAKE_CURRENT_BINARY_DIR}/nrlmsise-00-config-version.cmake"
-    VERSION "${nrlmsise_00_version}"
-    COMPATIBILITY AnyNewerVersion
-)
-
-install(FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/nrlmsise-00-config.cmake
-    ${CMAKE_CURRENT_BINARY_DIR}/nrlmsise-00-config-version.cmake
-    DESTINATION lib/cmake/nrlmsise-00
-)
-
-export(EXPORT nrlmsise-00-targets
-    FILE "${CMAKE_CURRENT_BINARY_DIR}/nrlmsise-00-targets.cmake"
-)
-
+    install(FILES
+        ${CMAKE_CURRENT_BINARY_DIR}/nrlmsise_00-config.cmake
+        ${CMAKE_CURRENT_BINARY_DIR}/nrlmsise_00-config-version.cmake
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/nrlmsise_00
+    )
+endif()

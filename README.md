@@ -11,18 +11,46 @@ To build and test this code locally:
 
 ```bash
 cmake -S . -B build
-make -C build
+cmake --build build
+cmake --build build --target test
 ```
 
-This creates both the `nrlmsise-00.so` shared library and the `nrlmsise-00_test` executable.
+This creates both the `libnrlmsise_00.so` shared library and the `nrlmsise_00_test` executable.
 
 To install (for example in `~/.local`), run
 
 ```bash
-cmake -S . -B build -DCMAKE_INSTALL_PREFIX=${HOME}/.local && make install
+cmake -S . -B build -DCMAKE_INSTALL_PREFIX=${HOME}/.local
+cmake --build build --target install
+```
+
+## Using in another CMake project
+
+### Option 1: `find_package` (installed library)
+
+After installing the library, use `find_package` in your project:
+
+```cmake
+find_package(nrlmsise_00 REQUIRED)
+target_link_libraries(your_target PRIVATE nrlmsise_00::nrlmsise_00)
+```
+
+### Option 2: `FetchContent` (source dependency)
+
+Pull the library directly into your build:
+
+```cmake
+include(FetchContent)
+FetchContent_Declare(
+    nrlmsise_00
+    GIT_REPOSITORY https://github.com/tudat-team/nrlmsise-00-cmake
+    GIT_TAG        master
+)
+FetchContent_MakeAvailable(nrlmsise_00)
+
+target_link_libraries(your_target PRIVATE nrlmsise_00::nrlmsise_00)
 ```
 
 ## License
 
 FIXME. There is currently no proper license attached to this work.
-
