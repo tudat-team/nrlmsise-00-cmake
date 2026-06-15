@@ -7,7 +7,6 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 include(GNUInstallDirs)
 
 #=== Library =========================================================
-
 add_library(nrlmsise_00 SHARED
     src/nrlmsise-00.c
     src/nrlmsise-00_data.c
@@ -29,19 +28,15 @@ target_include_directories(nrlmsise_00 PUBLIC
 
 target_link_libraries(nrlmsise_00 PRIVATE m)
 
-#=== Tests ===========================================================
-
 if(PROJECT_IS_TOP_LEVEL)
+    # Tests
     add_executable(nrlmsise_00_test test/nrlmsise-00_test.c)
     target_link_libraries(nrlmsise_00_test PRIVATE nrlmsise_00)
 
     include(CTest)
     add_test(NAME nrlmsise_00_test COMMAND nrlmsise_00_test)
-endif()
 
-#=== Install & Packaging =============================================
-
-if(PROJECT_IS_TOP_LEVEL)
+    # Install & Packaging
     install(TARGETS nrlmsise_00 EXPORT nrlmsise_00-targets
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT Runtime
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT Development
